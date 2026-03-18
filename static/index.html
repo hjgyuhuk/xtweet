@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xtweet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0d0d0d;
+  --surface:    #161616;
+  --surface2:   #1c1c1c;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.11);
+  --accent:     #1d9bf0;
+  --accent-dim: rgba(29,155,240,0.13);
+  --text-ui:    #6b7280;
+  --text-dim:   #2d3748;
+  --text-bright:#c9d1d9;
+  --mono:  'JetBrains Mono', monospace;
+  --serif: 'Instrument Serif', serif;
+  --sans:  'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  /* card dark */
+  --c-bg:      #15202b;
+  --c-surface: #1e2d3d;
+  --c-border:  #2f3b46;
+  --c-text:    #e7e9ea;
+  --c-sub:     #8b98a5;
+  --c-divider: #253341;
+}
+body.light-card {
+  --c-bg:      #ffffff;
+  --c-surface: #f7f9f9;
+  --c-border:  #e1e8ed;
+  --c-text:    #0f1419;
+  --c-sub:     #536471;
+  --c-divider: #edf0f2;
+}
+
+html { height: 100%; }
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text-ui);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 20px 100px;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(29,155,240,0.07) 0%, transparent 70%),
+    linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+  background-size: 100% 100%, 44px 44px, 44px 44px;
+}
+
+/* ── Header ── */
+.header { width: 100%; max-width: 620px; margin-bottom: 44px; }
+.logo {
+  font-family: var(--serif); font-style: italic; font-size: 30px;
+  color: #e7e9ea; letter-spacing: -0.3px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+}
+.logo-badge {
+  font-family: var(--mono); font-style: normal; font-weight: 700; font-size: 14px;
+  color: var(--accent); background: var(--accent-dim);
+  border: 1px solid rgba(29,155,240,0.25);
+  padding: 3px 10px; border-radius: 7px; letter-spacing: 0.05em;
+}
+.logo-sub { font-size: 11px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ── Input ── */
+.input-wrap { width: 100%; max-width: 620px; margin-bottom: 28px; }
+.input-row  { display: flex; gap: 8px; }
+.url-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 11px; color: #d1d5db; font-family: var(--mono); font-size: 12.5px;
+  padding: 13px 17px; outline: none;
+  transition: border-color .2s, box-shadow .2s; caret-color: var(--accent);
+}
+.url-input::placeholder { color: var(--text-dim); }
+.url-input:focus { border-color: rgba(29,155,240,.35); box-shadow: 0 0 0 3px rgba(29,155,240,.07); }
+
+.btn-primary {
+  background: var(--accent); color: #fff; border: none; border-radius: 11px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  padding: 13px 22px; cursor: pointer; transition: opacity .15s, transform .1s;
+  white-space: nowrap; letter-spacing: 0.03em;
+}
+.btn-primary:hover  { opacity: .88; }
+.btn-primary:active { transform: scale(.97); }
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── Status ── */
+.status {
+  width: 100%; max-width: 620px; margin-bottom: 16px;
+  font-size: 11.5px; letter-spacing: 0.03em; min-height: 20px;
+}
+.status.loading { color: var(--accent); }
+.status.error   { color: #f87171; }
+.status.empty   { opacity: 0; pointer-events: none; }
+.status:not(.empty)::before { content: '› '; opacity: .45; }
+
+/* ── Card outer ── */
+.card-outer {
+  width: 100%; max-width: 620px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .32s ease, transform .32s ease; pointer-events: none;
+}
+.card-outer.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* ── Tweet Card ── */
+#tweet-card {
+  background: var(--c-bg); border-radius: 18px; padding: 30px 32px 26px;
+  border: 1px solid var(--c-border);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 32px 80px rgba(0,0,0,0.55);
+  position: relative; transition: background .25s, border-color .25s;
+}
+.x-watermark {
+  position: absolute; top: 24px; right: 28px;
+  font-size: 17px; font-weight: 900; color: var(--c-text);
+  opacity: .05; pointer-events: none; user-select: none;
+}
+
+/* Reply */
+.reply-banner {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--c-sub);
+  margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--c-divider);
+}
+
+/* Author */
+.author-row { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+.avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--c-surface); }
+.avatar-fallback {
+  width: 52px; height: 52px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 20px; flex-shrink: 0; font-family: var(--mono);
+}
+.author-info { flex: 1; min-width: 0; }
+.author-name {
+  font-family: var(--sans); font-weight: 500; font-size: 16px;
+  color: var(--c-text); display: flex; align-items: center; gap: 5px;
+}
+.verified { color: var(--accent); font-size: 15px; flex-shrink: 0; }
+.author-handle { font-family: var(--mono); font-size: 12.5px; color: var(--c-sub); margin-top: 2px; }
+
+/* ── Editable tweet text ── */
+.tweet-text {
+  font-family: var(--sans); font-size: 19px; line-height: 1.72; color: var(--c-text);
+  margin: 0 -6px 16px; padding: 5px 6px; border-radius: 8px;
+  outline: none; cursor: text; transition: background .15s, box-shadow .15s;
+  word-break: break-word; min-height: 1.72em; white-space: pre-wrap;
+}
+.tweet-text:focus { background: rgba(255,255,255,0.038); box-shadow: 0 0 0 1.5px rgba(29,155,240,.22); }
+body.light-card .tweet-text:focus { background: rgba(0,0,0,.025); }
+.tweet-text .hashtag, .tweet-text .mention { color: var(--accent); }
+.tweet-text .url { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(29,155,240,.3); }
+
+.edit-hint {
+  display: flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--c-sub); opacity: .4;
+  margin-bottom: 14px; margin-top: -8px; pointer-events: none;
+}
+
+/* ── Translation block ── */
+.translation-block {
+  border-top: 1px solid var(--c-divider);
+  padding-top: 14px; margin-bottom: 16px;
+}
+.translation-label {
+  font-family: var(--mono); font-size: 10.5px; color: var(--c-sub);
+  opacity: .6; margin-bottom: 8px; letter-spacing: 0.05em;
+  display: flex; align-items: center; gap: 5px;
+}
+.translation-text {
+  font-family: var(--sans); font-size: 17px; line-height: 1.68;
+  color: var(--c-text); white-space: pre-wrap; word-break: break-word;
+  padding: 5px 6px; margin: 0 -6px;
+  border-radius: 8px; outline: none; cursor: text;
+  transition: background .15s, box-shadow .15s;
+}
+.translation-text:focus { background: rgba(255,255,255,0.038); box-shadow: 0 0 0 1.5px rgba(29,155,240,.22); }
+body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
+.translation-loading {
+  font-family: var(--mono); font-size: 12px; color: var(--c-sub);
+  display: flex; align-items: center; gap: 7px; padding: 5px 0;
+}
+
+/* Media badge */
+.media-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--accent);
+  background: var(--accent-dim); border: 1px solid rgba(29,155,240,.18);
+  padding: 5px 13px; border-radius: 20px; margin-bottom: 18px;
+}
+
+/* Quoted */
+.quoted {
+  border: 1px solid var(--c-border); border-radius: 13px;
+  padding: 15px 17px; margin-bottom: 18px; background: var(--c-surface);
+}
+.quoted-author { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.quoted-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+.quoted-name   { font-family: var(--sans); font-weight: 500; font-size: 13.5px; color: var(--c-text); }
+.quoted-handle { font-family: var(--mono); font-size: 11.5px; color: var(--c-sub); }
+.quoted-text   { font-family: var(--sans); font-size: 14.5px; color: var(--c-text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+
+/* Stats */
+.divider { border: none; border-top: 1px solid var(--c-divider); margin: 18px 0 14px; }
+.stats-row { display: flex; align-items: center; flex-wrap: wrap; }
+.stat { display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 12.5px; color: var(--c-sub); padding-right: 20px; }
+.stat-num { color: var(--c-text); font-weight: 500; }
+.stat-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--c-divider); margin-right: 18px; }
+.tweet-date { font-family: var(--mono); font-size: 11.5px; color: var(--c-sub); margin-left: auto; }
+
+/* ── Action bar ── */
+.action-bar {
+  width: 100%; max-width: 620px; margin-top: 16px;
+  display: flex; gap: 7px; justify-content: flex-end; flex-wrap: wrap;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.action-bar.visible { opacity: 1; pointer-events: auto; }
+
+.btn-act {
+  background: var(--surface); color: var(--text-ui);
+  border: 1px solid var(--border); border-radius: 9px;
+  font-family: var(--mono); font-size: 11.5px;
+  padding: 8px 15px; cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.btn-act:hover { border-color: var(--accent); color: var(--accent); background: rgba(29,155,240,.06); }
+.btn-act:disabled { opacity: .4; cursor: not-allowed; }
+.btn-act.ok { border-color: #34d399; color: #34d399; }
+
+/* ── Top bar ── */
+.topbar { position: fixed; top: 16px; right: 20px; display: flex; gap: 7px; z-index: 100; }
+
+/* ── Settings modal ── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.modal {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 16px; padding: 28px 28px 24px;
+  width: min(480px, calc(100vw - 32px));
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+  transform: translateY(8px); transition: transform .2s;
+}
+.modal-backdrop.open .modal { transform: translateY(0); }
+
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.modal-title {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--text-bright); letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 8px;
+}
+.modal-close {
+  background: none; border: none; cursor: pointer; color: var(--text-ui);
+  font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 5px;
+  transition: color .15s, background .15s;
+}
+.modal-close:hover { color: var(--text-bright); background: var(--border); }
+
+.field { margin-bottom: 18px; }
+.field:last-of-type { margin-bottom: 0; }
+.field-label {
+  display: block; font-family: var(--mono); font-size: 11px;
+  color: var(--text-ui); letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.field-input, .field-select {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 9px; color: #d1d5db; font-family: var(--mono); font-size: 12.5px;
+  padding: 11px 14px; outline: none;
+  transition: border-color .2s, box-shadow .2s; caret-color: var(--accent);
+}
+.field-input:focus, .field-select:focus {
+  border-color: rgba(29,155,240,.4); box-shadow: 0 0 0 3px rgba(29,155,240,.07);
+}
+.field-select { cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 34px;
+}
+.field-hint { font-size: 10.5px; color: var(--text-dim); margin-top: 5px; line-height: 1.5; }
+
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
+
+.btn-modal-save {
+  background: var(--accent); color: #fff; border: none; border-radius: 9px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  padding: 10px 20px; cursor: pointer; transition: opacity .15s;
+}
+.btn-modal-save:hover { opacity: .88; }
+.btn-modal-cancel {
+  background: transparent; color: var(--text-ui);
+  border: 1px solid var(--border); border-radius: 9px;
+  font-family: var(--mono); font-size: 12px;
+  padding: 10px 16px; cursor: pointer; transition: border-color .15s, color .15s;
+}
+.btn-modal-cancel:hover { border-color: var(--border2); color: var(--text-bright); }
+
+/* api key field: show/hide toggle */
+.field-input-wrap { position: relative; }
+.field-input-wrap .field-input { padding-right: 46px; }
+.toggle-visibility {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--text-ui);
+  padding: 4px; transition: color .15s;
+}
+.toggle-visibility:hover { color: var(--text-bright); }
+
+/* Spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block; width: 10px; height: 10px;
+  border: 1.5px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite;
+  vertical-align: middle; margin-right: 5px;
+}
+
+@media (max-width: 500px) {
+  body { padding: 32px 12px 80px; }
+  #tweet-card { padding: 22px 18px 18px; }
+  .tweet-text { font-size: 17px; }
+  .topbar { top: 10px; right: 10px; }
+  .action-bar { justify-content: stretch; }
+  .btn-act { flex: 1; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <button class="btn-act" id="settings-btn">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+    设置
+  </button>
+  <button class="btn-act" id="theme-btn">☀ 浅色卡片</button>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span id="modal-title-text">设置</span>
+      </div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="set-apikey">OpenAI API Key</label>
+      <div class="field-input-wrap">
+        <input class="field-input" id="set-apikey" type="password"
+          placeholder="sk-..." autocomplete="off" spellcheck="false">
+        <button class="toggle-visibility" id="toggle-key" title="显示/隐藏">
+          <svg id="eye-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+      <div class="field-hint">仅保存在本地浏览器 (localStorage)，不会上传到服务器。</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="set-baseurl">API Base URL</label>
+      <input class="field-input" id="set-baseurl" type="text"
+        placeholder="https://api.openai.com/v1" spellcheck="false">
+      <div class="field-hint">兼容 OpenAI 格式的第三方接口可在此修改。</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="set-model">模型</label>
+      <input class="field-input" id="set-model" type="text"
+        list="model-list" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
+      <datalist id="model-list">
+        <option value="gpt-4o-mini">
+        <option value="gpt-4o">
+        <option value="gpt-4-turbo">
+        <option value="gpt-3.5-turbo">
+        <option value="o1-mini">
+        <option value="o1-preview">
+        <option value="o3-mini">
+      </datalist>
+      <div class="field-hint">可直接输入任意模型名，也可从下拉列表中选择常用模型。</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="set-lang">翻译目标语言</label>
+      <select class="field-select" id="set-lang">
+        <option value="简体中文">简体中文</option>
+        <option value="繁體中文">繁體中文</option>
+        <option value="English">English</option>
+        <option value="日本語">日本語</option>
+        <option value="한국어">한국어</option>
+        <option value="Français">Français</option>
+        <option value="Deutsch">Deutsch</option>
+        <option value="Español">Español</option>
+      </select>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" id="modal-cancel">取消</button>
+      <button class="btn-modal-save" id="modal-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<header class="header">
+  <div class="logo">
+    <span class="logo-badge">𝕏</span>
+    tweet viewer
+  </div>
+  <div class="logo-sub">粘贴 x.com / twitter.com 链接</div>
+</header>
+
+<div class="input-wrap">
+  <div class="input-row">
+    <input class="url-input" id="url-input" type="text"
+      placeholder="https://x.com/jack/status/20"
+      autocomplete="off" spellcheck="false">
+    <button class="btn-primary" id="fetch-btn">获取</button>
+  </div>
+</div>
+
+<div class="status empty" id="status"></div>
+
+<div class="card-outer" id="card-outer">
+  <div id="tweet-card"></div>
+</div>
+
+<div class="action-bar" id="action-bar">
+  <button class="btn-act" id="btn-translate">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/>
+      <path d="M2 5h12"/><path d="M7 2h1"/>
+      <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
+    </svg>
+    翻译
+  </button>
+  <button class="btn-act" id="btn-copy-text">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2"/>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    </svg>
+    复制文本
+  </button>
+  <button class="btn-act" id="btn-copy-img">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </svg>
+    复制图片
+  </button>
+  <button class="btn-act" id="btn-save">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    保存图片
+  </button>
+</div>
+
+<script>
+'use strict';
+
+// ── Settings (localStorage) ───────────────────────────────────────────────
+const SETTINGS_KEY = 'xtweet_settings';
+
+function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  } catch { return {}; }
+}
+function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+
+let cfg = loadSettings();
+
+// ── State ─────────────────────────────────────────────────────────────────
+let currentTweet = null;
+let currentURL   = '';
+let translationText = '';   // last translation result
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+const esc = s => String(s||'')
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function fmtCount(n) {
+  if (!n) return '0';
+  if (n>=1e6) return (n/1e6).toFixed(1)+'M';
+  if (n>=1e4) return Math.round(n/1e3)+'K';
+  if (n>=1e3) return (n/1e3).toFixed(1)+'K';
+  return String(n);
+}
+
+// Use browser's local timezone — new Date() is already local,
+// toLocaleString without timeZone option uses the browser's timezone.
+function fmtDate(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  if (isNaN(d)) return str;
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+    // no timeZone: option → browser's local timezone
+  }).replace(/\//g, '/');
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status ' + (msg ? (type||'') : 'empty');
+}
+
+// ── Text processing ───────────────────────────────────────────────────────
+function renderHTML(tweet) {
+  let text = tweet.full_text || tweet.text || '';
+  const ents = tweet.entities || {};
+  const mediaURLs = new Set();
+  (tweet.mediaDetails||[]).forEach(m => m.url && mediaURLs.add(m.url));
+  (ents.media||[]).forEach(m => m.url && mediaURLs.add(m.url));
+
+  let r = esc(text);
+  (ents.urls||[]).forEach(u => {
+    const rep = mediaURLs.has(u.url) ? '' :
+      `<a class="url" href="${esc(u.expanded_url)}" target="_blank" rel="noopener">${esc(u.display_url)}</a>`;
+    r = r.replace(esc(u.url), rep);
+  });
+  (ents.media||[]).forEach(m => { if (m.url) r = r.replace(esc(m.url), ''); });
+  r = r.replace(/#([^\s#<]+)/g, '<span class="hashtag">#$1</span>');
+  r = r.replace(/@([a-zA-Z0-9_]+)/g, '<span class="mention">@$1</span>');
+  return r.trim();
+}
+
+function plainBody(tweet) {
+  let text = tweet.full_text || tweet.text || '';
+  const ents = tweet.entities || {};
+  const mediaURLs = new Set();
+  (tweet.mediaDetails||[]).forEach(m => m.url && mediaURLs.add(m.url));
+  (ents.media||[]).forEach(m => m.url && mediaURLs.add(m.url));
+  (ents.urls||[]).forEach(u => { text = text.replace(u.url, mediaURLs.has(u.url) ? '' : u.display_url); });
+  (ents.media||[]).forEach(m => { if (m.url) text = text.replace(m.url, ''); });
+  return text.trim();
+}
+
+function mediaSummary(tweet) {
+  if (tweet.video) return {icon:'▶', label:'视频'};
+  for (const m of (tweet.mediaDetails||[])) {
+    if (m.type==='animated_gif') return {icon:'⟳', label:'GIF'};
+  }
+  const n = (tweet.mediaDetails||tweet.photos||[]).length;
+  if (n===1) return {icon:'◻', label:'1 张图片'};
+  if (n>1)   return {icon:'⊞', label:`${n} 张图片`};
+  return null;
+}
+
+// ── Build plain-text for copy ─────────────────────────────────────────────
+function buildPlainText() {
+  if (!currentTweet) return '';
+  const u    = currentTweet.user || {};
+  const date = fmtDate(currentTweet.created_at);
+
+  const editEl = document.querySelector('#tweet-card .tweet-text');
+  const body   = editEl ? editEl.innerText.trim() : plainBody(currentTweet);
+
+  const lines = [`${u.name||''} @${u.screen_name||''} (${date})`, body];
+
+  // Append translation if present
+  const transEl = document.querySelector('#tweet-card .translation-text');
+  if (transEl) {
+    const t = transEl.innerText.trim();
+    if (t) lines.push('', `[译] ${t}`);
+  }
+
+  // Media URLs
+  const seen = new Set();
+  const push = url => { if (url && !seen.has(url)) { seen.add(url); lines.push(url); } };
+  (currentTweet.mediaDetails||[]).forEach(m => push(m.media_url_https));
+  (currentTweet.photos||[]).forEach(p => push(p.url));
+  if (currentTweet.video?.poster) push(currentTweet.video.poster);
+  lines.push(currentURL);
+
+  return lines.join('\n');
+}
+
+// ── Render card ───────────────────────────────────────────────────────────
+function renderCard(tweet) {
+  const card = document.getElementById('tweet-card');
+  const user = tweet.user || {};
+  const av   = (user.profile_image_url_https||'').replace('_normal','_bigger');
+  const veri = user.is_blue_verified || user.verified;
+  let html   = '<div class="x-watermark">𝕏</div>';
+
+  if (tweet.in_reply_to_screen_name) {
+    html += `<div class="reply-banner">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/>
+      </svg>
+      回复&nbsp;<span style="color:var(--accent)">@${esc(tweet.in_reply_to_screen_name)}</span>
+    </div>`;
+  }
+
+  html += `<div class="author-row">`;
+  if (av) {
+    html += `<img class="avatar" src="${esc(av)}" alt=""
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="avatar-fallback" style="display:none">${esc((user.name||'?')[0])}</div>`;
+  } else {
+    html += `<div class="avatar-fallback">${esc((user.name||'?')[0])}</div>`;
+  }
+  html += `<div class="author-info">
+    <div class="author-name">${esc(user.name||'')}${veri?'<span class="verified">✓</span>':''}</div>
+    <div class="author-handle">@${esc(user.screen_name||'')}</div>
+  </div></div>`;
+
+  html += `<div class="tweet-text" contenteditable="true" spellcheck="false">${renderHTML(tweet)}</div>`;
+
+  const ms = mediaSummary(tweet);
+  if (ms) html += `<div class="media-badge">${ms.icon}&nbsp;${ms.label}</div>`;
+
+  const qt = tweet.quoted_tweet;
+  if (qt) {
+    const qu = qt.user || {};
+    let qtBody = qt.full_text || qt.text || '';
+    (qt.entities?.urls||[]).forEach(u => { qtBody = qtBody.replace(u.url, u.display_url); });
+    (qt.entities?.media||[]).forEach(m => { if (m.url) qtBody = qtBody.replace(m.url,''); });
+    html += `<div class="quoted">
+      <div class="quoted-author">
+        ${qu.profile_image_url_https ? `<img class="quoted-avatar" src="${esc(qu.profile_image_url_https)}" alt="">` : ''}
+        <span class="quoted-name">${esc(qu.name||'')}</span>
+        <span class="quoted-handle">@${esc(qu.screen_name||'')}</span>
+      </div>
+      <div class="quoted-text">${esc(qtBody.trim())}</div>
+    </div>`;
+  }
+
+  html += `<hr class="divider">
+  <div class="stats-row">
+    <span class="stat">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span class="stat-num">${fmtCount(tweet.conversation_count)}</span>&nbsp;回复
+    </span>
+    <div class="stat-dot"></div>
+    <span class="stat">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <span class="stat-num">${fmtCount(tweet.favorite_count)}</span>&nbsp;喜欢
+    </span>
+    ${tweet.created_at ? `<span class="tweet-date">${fmtDate(tweet.created_at)}</span>` : ''}
+  </div>`;
+
+  card.innerHTML = html;
+  translationText = '';  // reset on new card
+}
+
+// ── Translation ───────────────────────────────────────────────────────────
+function getTranslationEl() { return document.getElementById('translation-block'); }
+
+function showTranslationLoading() {
+  removeTranslationBlock();
+  const card = document.getElementById('tweet-card');
+  const divider = card.querySelector('.divider');
+  const block = document.createElement('div');
+  block.id = 'translation-block';
+  block.className = 'translation-block';
+  block.innerHTML = `
+    <div class="translation-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/>
+        <path d="M2 5h12"/><path d="M7 2h1"/>
+        <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
+      </svg>
+      译文
+    </div>
+    <div class="translation-loading"><span class="spinner"></span>翻译中…</div>`;
+  card.insertBefore(block, divider);
+}
+
+function showTranslationResult(text) {
+  translationText = text;
+  const block = getTranslationEl();
+  if (!block) return;
+  block.innerHTML = `
+    <div class="translation-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/>
+        <path d="M2 5h12"/><path d="M7 2h1"/>
+        <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
+      </svg>
+      译文
+    </div>
+    <div class="translation-text" contenteditable="true" spellcheck="false">${esc(text)}</div>`;
+}
+
+function removeTranslationBlock() {
+  const el = getTranslationEl();
+  if (el) el.remove();
+  translationText = '';
+}
+
+async function doTranslate() {
+  if (!currentTweet) return;
+
+  const apiKey = cfg.apiKey || '';
+  if (!apiKey) {
+    openSettings();
+    setStatus('请先在设置中填写 OpenAI API Key', 'error');
+    return;
+  }
+
+  const editEl = document.querySelector('#tweet-card .tweet-text');
+  const body   = editEl ? editEl.innerText.trim() : plainBody(currentTweet);
+  if (!body) return;
+
+  const lang    = cfg.lang    || '简体中文';
+  const model   = cfg.model   || 'gpt-4o-mini';
+  const baseURL = (cfg.baseURL || 'https://api.openai.com/v1').replace(/\/$/, '');
+
+  showTranslationLoading();
+
+  const btn = document.getElementById('btn-translate');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'system',
+            content: `你是一名专业翻译。将用户提供的推文翻译成${lang}。要求：保留原文语气和风格，保留 #话题标签 和 @用户名 不翻译，只输出译文本身，不加任何额外说明。`,
+          },
+          { role: 'user', content: body },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API 错误 ${res.status}`);
+    }
+
+    const data = await res.json();
+    const translated = data.choices?.[0]?.message?.content?.trim() || '';
+    if (!translated) throw new Error('API 返回空内容');
+    showTranslationResult(translated);
+  } catch (e) {
+    removeTranslationBlock();
+    setStatus('翻译失败: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Canvas ────────────────────────────────────────────────────────────────
+async function toCanvas() {
+  const card = document.getElementById('tweet-card');
+  const eds  = card.querySelectorAll('[contenteditable]');
+  eds.forEach(e => e.contentEditable = 'false');
+  try {
+    return await html2canvas(card, {
+      scale: 2.5, useCORS: true, allowTaint: true,
+      backgroundColor: getComputedStyle(card).backgroundColor,
+      logging: false,
+    });
+  } finally {
+    eds.forEach(e => e.contentEditable = 'true');
+  }
+}
+
+// ── Button helper ─────────────────────────────────────────────────────────
+async function withBtn(id, loadLabel, fn) {
+  const btn  = document.getElementById(id);
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>${loadLabel}`;
+  try {
+    await fn();
+    btn.classList.add('ok');
+    btn.innerHTML = '✓ 完成';
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('ok'); }, 1800);
+  } catch (e) {
+    setStatus(e.message, 'error');
+    btn.innerHTML = orig;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+const saveImage = () => withBtn('btn-save', '渲染中…', async () => {
+  const canvas = await toCanvas();
+  const id = (document.getElementById('url-input').value.match(/\d{10,}/)||['tweet'])[0];
+  Object.assign(document.createElement('a'), {
+    href: canvas.toDataURL('image/png'), download: `tweet-${id}.png`,
+  }).click();
+});
+
+const copyImage = () => withBtn('btn-copy-img', '渲染中…', async () => {
+  const canvas = await toCanvas();
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+});
+
+const copyText = () => withBtn('btn-copy-text', '复制中…', async () => {
+  if (!currentTweet) throw new Error('尚未加载推文');
+  await navigator.clipboard.writeText(buildPlainText());
+});
+
+// ── Fetch ─────────────────────────────────────────────────────────────────
+async function doFetch() {
+  const inputEl = document.getElementById('url-input');
+  const btnEl   = document.getElementById('fetch-btn');
+  const raw     = inputEl.value.trim();
+  if (!raw) return;
+
+  btnEl.disabled = true;
+  btnEl.textContent = '获取中';
+  const st = document.getElementById('status');
+  st.innerHTML = '<span class="spinner"></span>正在请求…';
+  st.className = 'status loading';
+  document.getElementById('card-outer').classList.remove('visible');
+  document.getElementById('action-bar').classList.remove('visible');
+  currentTweet = null; currentURL = '';
+
+  try {
+    const res  = await fetch(`/api/tweet?id=${encodeURIComponent(raw)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    currentTweet = data;
+    currentURL   = raw.startsWith('http') ? raw
+      : 'https://x.com/i/status/' + (raw.match(/\d{10,}/)||[''])[0];
+
+    renderCard(data);
+    setStatus('');
+    requestAnimationFrame(() => {
+      document.getElementById('card-outer').classList.add('visible');
+      document.getElementById('action-bar').classList.add('visible');
+    });
+  } catch (e) {
+    setStatus(e.message, 'error');
+  } finally {
+    btnEl.disabled   = false;
+    btnEl.textContent = '获取';
+  }
+}
+
+// ── Settings modal ────────────────────────────────────────────────────────
+function openSettings() {
+  const c = loadSettings();
+  document.getElementById('set-apikey').value  = c.apiKey  || '';
+  document.getElementById('set-baseurl').value = c.baseURL || 'https://api.openai.com/v1';
+  document.getElementById('set-model').value   = c.model   || 'gpt-4o-mini';
+  document.getElementById('set-lang').value    = c.lang    || '简体中文';
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.getElementById('set-apikey').focus();
+}
+function closeSettings() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+}
+function commitSettings() {
+  cfg = {
+    apiKey:  document.getElementById('set-apikey').value.trim(),
+    baseURL: document.getElementById('set-baseurl').value.trim(),
+    model:   document.getElementById('set-model').value,
+    lang:    document.getElementById('set-lang').value,
+  };
+  saveSettings(cfg);
+  closeSettings();
+}
+
+// ── Event wiring ──────────────────────────────────────────────────────────
+document.getElementById('fetch-btn').addEventListener('click', doFetch);
+document.getElementById('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doFetch();
+});
+document.getElementById('btn-save').addEventListener('click', saveImage);
+document.getElementById('btn-copy-img').addEventListener('click', copyImage);
+document.getElementById('btn-copy-text').addEventListener('click', copyText);
+document.getElementById('btn-translate').addEventListener('click', doTranslate);
+
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const on = document.body.classList.toggle('light-card');
+  document.getElementById('theme-btn').textContent = on ? '☾ 暗色卡片' : '☀ 浅色卡片';
+});
+
+// Settings modal
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('modal-close').addEventListener('click', closeSettings);
+document.getElementById('modal-cancel').addEventListener('click', closeSettings);
+document.getElementById('modal-save').addEventListener('click', commitSettings);
+document.getElementById('modal-backdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-backdrop')) closeSettings();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings();
+  if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); openSettings(); }
+});
+
+// API key visibility toggle
+document.getElementById('toggle-key').addEventListener('click', () => {
+  const inp  = document.getElementById('set-apikey');
+  const icon = document.getElementById('eye-icon');
+  const hide = inp.type === 'password';
+  inp.type = hide ? 'text' : 'password';
+  icon.innerHTML = hide
+    ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+       <line x1="1" y1="1" x2="23" y2="23"/>`
+    : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+});
+
+document.getElementById('url-input').focus();
+
+const p = new URLSearchParams(location.search);
+if (p.get('url')) {
+  document.getElementById('url-input').value = p.get('url');
+  doFetch();
+}
+</script>
+</body>
+</html>
