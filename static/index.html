@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>xtweet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +24,7 @@
   --text-bright:#c9d1d9;
   --mono:  'JetBrains Mono', monospace;
   --serif: 'Instrument Serif', serif;
-  --sans:  'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  --sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   /* card dark */
   --c-bg:      #15202b;
   --c-surface: #1e2d3d;
@@ -46,7 +47,7 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text-ui);
-  font-family: var(--mono);
+  font-family: var(--sans);
   font-size: 13px;
   line-height: 1.6;
   display: flex;
@@ -68,7 +69,7 @@ body {
   display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
 }
 .logo-badge {
-  font-family: var(--mono); font-style: normal; font-weight: 700; font-size: 14px;
+  font-family: var(--sans); font-style: normal; font-weight: 700; font-size: 14px;
   color: var(--accent); background: var(--accent-dim);
   border: 1px solid rgba(29,155,240,0.25);
   padding: 3px 10px; border-radius: 7px; letter-spacing: 0.05em;
@@ -89,7 +90,7 @@ body {
 
 .btn-primary {
   background: var(--accent); color: #fff; border: none; border-radius: 11px;
-  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  font-family: var(--sans); font-size: 12px; font-weight: 700;
   padding: 13px 22px; cursor: pointer; transition: opacity .15s, transform .1s;
   white-space: nowrap; letter-spacing: 0.03em;
 }
@@ -131,7 +132,7 @@ body {
 /* Reply */
 .reply-banner {
   display: flex; align-items: center; gap: 7px;
-  font-family: var(--mono); font-size: 11.5px; color: var(--c-sub);
+  font-family: var(--sans); font-size: 11.5px; color: var(--c-sub);
   margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--c-divider);
 }
 
@@ -141,7 +142,7 @@ body {
 .avatar-fallback {
   width: 52px; height: 52px; border-radius: 50%; background: var(--accent);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 700; font-size: 20px; flex-shrink: 0; font-family: var(--mono);
+  color: #fff; font-weight: 700; font-size: 20px; flex-shrink: 0; font-family: var(--sans);
 }
 .author-info { flex: 1; min-width: 0; }
 .author-name {
@@ -149,7 +150,7 @@ body {
   color: var(--c-text); display: flex; align-items: center; gap: 5px;
 }
 .verified { color: var(--accent); font-size: 15px; flex-shrink: 0; }
-.author-handle { font-family: var(--mono); font-size: 12.5px; color: var(--c-sub); margin-top: 2px; }
+.author-handle { font-family: var(--sans); font-size: 12.5px; color: var(--c-sub); margin-top: 2px; }
 
 /* ── Editable tweet text ── */
 .tweet-text {
@@ -165,7 +166,7 @@ body.light-card .tweet-text:focus { background: rgba(0,0,0,.025); }
 
 .edit-hint {
   display: flex; align-items: center; gap: 5px;
-  font-family: var(--mono); font-size: 10.5px; color: var(--c-sub); opacity: .4;
+  font-family: var(--sans); font-size: 10.5px; color: var(--c-sub); opacity: .4;
   margin-bottom: 14px; margin-top: -8px; pointer-events: none;
 }
 
@@ -175,7 +176,7 @@ body.light-card .tweet-text:focus { background: rgba(0,0,0,.025); }
   padding-top: 14px; margin-bottom: 16px;
 }
 .translation-label {
-  font-family: var(--mono); font-size: 10.5px; color: var(--c-sub);
+  font-family: var(--sans); font-size: 10.5px; color: var(--c-sub);
   opacity: .6; margin-bottom: 8px; letter-spacing: 0.05em;
   display: flex; align-items: center; gap: 5px;
 }
@@ -189,17 +190,62 @@ body.light-card .tweet-text:focus { background: rgba(0,0,0,.025); }
 .translation-text:focus { background: rgba(255,255,255,0.038); box-shadow: 0 0 0 1.5px rgba(29,155,240,.22); }
 body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
 .translation-loading {
-  font-family: var(--mono); font-size: 12px; color: var(--c-sub);
+  font-family: var(--sans); font-size: 12px; color: var(--c-sub);
   display: flex; align-items: center; gap: 7px; padding: 5px 0;
 }
 
 /* Media badge */
 .media-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--mono); font-size: 11.5px; color: var(--accent);
+  font-family: var(--sans); font-size: 11.5px; color: var(--accent);
   background: var(--accent-dim); border: 1px solid rgba(29,155,240,.18);
   padding: 5px 13px; border-radius: 20px; margin-bottom: 18px;
 }
+
+/* Video / GIF player */
+.media-player {
+  margin-bottom: 18px; border-radius: 13px; overflow: hidden;
+  background: #000; position: relative;
+}
+.media-video {
+  width: 100%; max-height: 480px; display: block;
+  border-radius: 13px; object-fit: contain;
+  background: #000;
+}
+
+/* Single photo */
+.media-photo {
+  margin-bottom: 18px; border-radius: 13px; overflow: hidden;
+  background: var(--c-surface);
+}
+.media-photo img {
+  width: 100%; max-height: 520px; display: block;
+  object-fit: cover; border-radius: 13px;
+}
+
+/* Photo grid (2-4 images) */
+.media-grid {
+  margin-bottom: 18px; border-radius: 13px; overflow: hidden;
+  display: grid; gap: 3px; background: var(--c-surface);
+}
+.media-grid img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.media-grid.grid-2 { grid-template-columns: 1fr 1fr; }
+.media-grid.grid-2 img { max-height: 300px; }
+.media-grid.grid-3 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.media-grid.grid-3 img:first-child {
+  grid-row: 1 / 3; max-height: 600px;
+}
+.media-grid.grid-3 img:not(:first-child) { max-height: 300px; }
+.media-grid.grid-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.media-grid.grid-4 img { max-height: 300px; }
 
 /* Quoted */
 .quoted {
@@ -209,16 +255,16 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
 .quoted-author { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
 .quoted-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
 .quoted-name   { font-family: var(--sans); font-weight: 500; font-size: 13.5px; color: var(--c-text); }
-.quoted-handle { font-family: var(--mono); font-size: 11.5px; color: var(--c-sub); }
+.quoted-handle { font-family: var(--sans); font-size: 11.5px; color: var(--c-sub); }
 .quoted-text   { font-family: var(--sans); font-size: 14.5px; color: var(--c-text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 
 /* Stats */
 .divider { border: none; border-top: 1px solid var(--c-divider); margin: 18px 0 14px; }
 .stats-row { display: flex; align-items: center; flex-wrap: wrap; }
-.stat { display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 12.5px; color: var(--c-sub); padding-right: 20px; }
+.stat { display: flex; align-items: center; gap: 5px; font-family: var(--sans); font-size: 12.5px; color: var(--c-sub); padding-right: 20px; }
 .stat-num { color: var(--c-text); font-weight: 500; }
 .stat-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--c-divider); margin-right: 18px; }
-.tweet-date { font-family: var(--mono); font-size: 11.5px; color: var(--c-sub); margin-left: auto; }
+.tweet-date { font-family: var(--sans); font-size: 11.5px; color: var(--c-sub); margin-left: auto; }
 
 /* ── Action bar ── */
 .action-bar {
@@ -231,7 +277,7 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
 .btn-act {
   background: var(--surface); color: var(--text-ui);
   border: 1px solid var(--border); border-radius: 9px;
-  font-family: var(--mono); font-size: 11.5px;
+  font-family: var(--sans); font-size: 11.5px;
   padding: 8px 15px; cursor: pointer;
   transition: border-color .15s, color .15s, background .15s;
   white-space: nowrap; display: flex; align-items: center; gap: 6px;
@@ -267,7 +313,7 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
   margin-bottom: 24px;
 }
 .modal-title {
-  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  font-family: var(--sans); font-size: 13px; font-weight: 700;
   color: var(--text-bright); letter-spacing: 0.04em;
   display: flex; align-items: center; gap: 8px;
 }
@@ -281,7 +327,7 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
 .field { margin-bottom: 18px; }
 .field:last-of-type { margin-bottom: 0; }
 .field-label {
-  display: block; font-family: var(--mono); font-size: 11px;
+  display: block; font-family: var(--sans); font-size: 11px;
   color: var(--text-ui); letter-spacing: 0.06em; text-transform: uppercase;
   margin-bottom: 7px;
 }
@@ -300,18 +346,30 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
 }
 .field-hint { font-size: 10.5px; color: var(--text-dim); margin-top: 5px; line-height: 1.5; }
 
+/* Toggle row */
+.toggle-row { display: flex; flex-direction: column; gap: 8px; }
+.toggle-item {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 12.5px; color: #d1d5db;
+  cursor: pointer;
+}
+.toggle-item input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+  flex-shrink: 0;
+}
+
 .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
 
 .btn-modal-save {
   background: var(--accent); color: #fff; border: none; border-radius: 9px;
-  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  font-family: var(--sans); font-size: 12px; font-weight: 700;
   padding: 10px 20px; cursor: pointer; transition: opacity .15s;
 }
 .btn-modal-save:hover { opacity: .88; }
 .btn-modal-cancel {
   background: transparent; color: var(--text-ui);
   border: 1px solid var(--border); border-radius: 9px;
-  font-family: var(--mono); font-size: 12px;
+  font-family: var(--sans); font-size: 12px;
   padding: 10px 16px; cursor: pointer; transition: border-color .15s, color .15s;
 }
 .btn-modal-cancel:hover { border-color: var(--border2); color: var(--text-bright); }
@@ -334,6 +392,9 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
   border-radius: 50%; animation: spin .7s linear infinite;
   vertical-align: middle; margin-right: 5px;
 }
+
+/* Safari: hide copy image */
+body.safari #btn-copy-img { display: none; }
 
 @media (max-width: 500px) {
   body { padding: 32px 12px 80px; }
@@ -425,6 +486,17 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
       </select>
     </div>
 
+    <div class="field field-show-media">
+      <label class="field-label">显示</label>
+      <div class="toggle-row">
+        <label class="toggle-item">
+          <input type="checkbox" id="set-show-media" checked>
+          <span>显示图片 / 视频</span>
+        </label>
+      </div>
+      <div class="field-hint">关闭后卡片中不再显示图片和视频，仅显示文字内容。</div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-modal-cancel" id="modal-cancel">取消</button>
       <button class="btn-modal-save" id="modal-save">保存</button>
@@ -494,6 +566,16 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
 
 <script>
 'use strict';
+
+// ── Browser detection ────────────────────────────────────────────────────
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isSafari = isIOS ||
+  (/^Mozilla\/5\.0.*Macintosh/.test(navigator.userAgent) &&
+   /Safari\//.test(navigator.userAgent) &&
+   !/Chrome\//.test(navigator.userAgent) &&
+   !/Chromium\//.test(navigator.userAgent));
+if (isSafari) document.body.classList.add('safari');
 
 // ── Settings (localStorage) ───────────────────────────────────────────────
 const SETTINGS_KEY = 'xtweet_settings';
@@ -589,6 +671,21 @@ function mediaSummary(tweet) {
   return null;
 }
 
+// Resolve video from tweet.video (fxtwitter) or mediaDetails (syndication)
+function getVideo(tweet) {
+  if (tweet.video?.url) return tweet.video;
+  for (const m of (tweet.mediaDetails||[])) {
+    if ((m.type === 'video' || m.type === 'animated_gif') && m.video_info?.variants) {
+      const mp4s = m.video_info.variants.filter(v => v.content_type === 'video/mp4');
+      if (mp4s.length) {
+        mp4s.sort((a, b) => (b.bitrate||0) - (a.bitrate||0));
+        return { type: m.type, url: mp4s[0].url, poster: m.media_url_https || '' };
+      }
+    }
+  }
+  return null;
+}
+
 // ── Build plain-text for copy ─────────────────────────────────────────────
 function buildPlainText() {
   if (!currentTweet) return '';
@@ -598,22 +695,58 @@ function buildPlainText() {
   const editEl = document.querySelector('#tweet-card .tweet-text');
   const body   = editEl ? editEl.innerText.trim() : plainBody(currentTweet);
 
-  const lines = [`${u.name||''} @${u.screen_name||''} (${date})`, body];
+  const lines = [
+    `${u.name||''} @${u.screen_name||''}`,
+    date,
+    '',
+    body,
+  ];
 
-  // Append translation if present
+  // Quoted tweet
+  const qt = currentTweet.quoted_tweet;
+  if (qt) {
+    const qu = qt.user || {};
+    let qtBody = qt.full_text || qt.text || '';
+    (qt.entities?.urls||[]).forEach(u => { qtBody = qtBody.replace(u.url, u.display_url); });
+    (qt.entities?.media||[]).forEach(m => { if (m.url) qtBody = qtBody.replace(m.url, ''); });
+    lines.push(
+      '',
+      '────────────────────',
+      `${qu.name||''} @${qu.screen_name||''}`,
+      qtBody.trim(),
+    );
+  }
+
+  // Translation
   const transEl = document.querySelector('#tweet-card .translation-text');
   if (transEl) {
     const t = transEl.innerText.trim();
-    if (t) lines.push('', `[译] ${t}`);
+    if (t) lines.push('', '────────────────────', `[译] ${t}`);
   }
 
-  // Media URLs
+  // Media
+  const mediaLines = [];
   const seen = new Set();
-  const push = url => { if (url && !seen.has(url)) { seen.add(url); lines.push(url); } };
-  (currentTweet.mediaDetails||[]).forEach(m => push(m.media_url_https));
+  const push = url => { if (url && !seen.has(url)) { seen.add(url); mediaLines.push(url); } };
+  (currentTweet.mediaDetails||[]).forEach(m => {
+    if (m.type === 'photo') push(m.media_url_https);
+  });
   (currentTweet.photos||[]).forEach(p => push(p.url));
   if (currentTweet.video?.poster) push(currentTweet.video.poster);
-  lines.push(currentURL);
+  if (currentTweet.video?.url) push(currentTweet.video.url);
+  (currentTweet.mediaDetails||[]).forEach(m => {
+    if (m.type === 'video' || m.type === 'animated_gif') {
+      push(m.media_url_https);
+      (m.video_info?.variants||[]).forEach(v => {
+        if (v.content_type === 'video/mp4') push(v.url);
+      });
+    }
+  });
+  if (mediaLines.length) {
+    lines.push('', '── 媒体 ──', ...mediaLines);
+  }
+
+  lines.push('', currentURL);
 
   return lines.join('\n');
 }
@@ -650,8 +783,44 @@ function renderCard(tweet) {
 
   html += `<div class="tweet-text" contenteditable="true" spellcheck="false">${renderHTML(tweet)}</div>`;
 
-  const ms = mediaSummary(tweet);
-  if (ms) html += `<div class="media-badge">${ms.icon}&nbsp;${ms.label}</div>`;
+  // Media: photos / video / GIF
+  const showMedia = cfg.showMedia !== false;
+  if (showMedia) {
+    const vid = getVideo(tweet);
+    if (vid && vid.url) {
+      if (vid.type === 'animated_gif') {
+        html += `<div class="media-player">
+          <video autoplay loop muted playsinline class="media-video"
+            poster="${esc(vid.poster||'')}">
+            <source src="${esc(vid.url)}" type="video/mp4">
+          </video>
+        </div>`;
+      } else {
+        html += `<div class="media-player">
+          <video controls playsinline class="media-video"
+            poster="${esc(vid.poster||'')}">
+            <source src="${esc(vid.url)}" type="video/mp4">
+          </video>
+        </div>`;
+      }
+    } else {
+      const photoURLs = [];
+      (tweet.photos||[]).forEach(p => { if (p.url) photoURLs.push(p.url); });
+      (tweet.mediaDetails||[]).forEach(m => {
+        if (m.type === 'photo' && m.media_url_https && !photoURLs.includes(m.media_url_https))
+          photoURLs.push(m.media_url_https);
+      });
+      if (photoURLs.length === 1) {
+        html += `<div class="media-photo"><img src="${esc(photoURLs[0])}" alt=""></div>`;
+      } else if (photoURLs.length > 1) {
+        const cls = photoURLs.length === 2 ? 'grid-2' :
+                    photoURLs.length === 3 ? 'grid-3' : 'grid-4';
+        html += `<div class="media-grid ${cls}">`;
+        photoURLs.slice(0, 4).forEach(u => { html += `<img src="${esc(u)}" alt="">`; });
+        html += `</div>`;
+      }
+    }
+  }
 
   const qt = tweet.quoted_tweet;
   if (qt) {
@@ -750,11 +919,18 @@ async function doTranslate() {
   const body   = editEl ? editEl.innerText.trim() : plainBody(currentTweet);
   if (!body) return;
 
+  // Save original text for restore
+  if (!editEl.dataset.original) {
+    editEl.dataset.original = editEl.innerHTML;
+  }
+
+  const overwrite = confirm('是否覆盖原推文？\n\n确定 = 覆盖原文\n取消 = 显示在下方');
+
   const lang    = cfg.lang    || '简体中文';
   const model   = cfg.model   || 'gpt-4o-mini';
   const baseURL = (cfg.baseURL || 'https://api.openai.com/v1').replace(/\/$/, '');
 
-  showTranslationLoading();
+  if (!overwrite) showTranslationLoading();
 
   const btn = document.getElementById('btn-translate');
   btn.disabled = true;
@@ -787,7 +963,15 @@ async function doTranslate() {
     const data = await res.json();
     const translated = data.choices?.[0]?.message?.content?.trim() || '';
     if (!translated) throw new Error('API 返回空内容');
-    showTranslationResult(translated);
+
+    if (overwrite) {
+      // Replace tweet text with translation
+      removeTranslationBlock();
+      editEl.innerText = translated;
+      translationText = translated;
+    } else {
+      showTranslationResult(translated);
+    }
   } catch (e) {
     removeTranslationBlock();
     setStatus('翻译失败: ' + e.message, 'error');
@@ -801,6 +985,32 @@ async function toCanvas() {
   const card = document.getElementById('tweet-card');
   const eds  = card.querySelectorAll('[contenteditable]');
   eds.forEach(e => e.contentEditable = 'false');
+
+  // Replace videos with poster/frame images
+  const vidPlayers = card.querySelectorAll('.media-player');
+  const vidReplacements = [];
+  vidPlayers.forEach(vp => {
+    const vid = vp.querySelector('video');
+    if (!vid) return;
+    const poster = vid.poster || getVideo(currentTweet)?.poster || '';
+    if (!poster) { vp.style.display = 'none'; vidReplacements.push({ vp }); return; }
+    const replacement = document.createElement('img');
+    replacement.src = poster;
+    replacement.style.cssText = 'width:100%;max-height:480px;display:block;border-radius:13px;object-fit:contain;background:#000';
+    vp.style.display = 'none';
+    vp.parentNode.insertBefore(replacement, vp.nextSibling);
+    vidReplacements.push({ vp, replacement });
+  });
+
+  // Wait for all images to load
+  await Promise.allSettled([...card.querySelectorAll('img')].map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(r => {
+      const t = setTimeout(r, 5000);
+      img.onload = img.onerror = () => { clearTimeout(t); r(); };
+    });
+  }));
+
   try {
     return await html2canvas(card, {
       scale: 2.5, useCORS: true, allowTaint: true,
@@ -808,6 +1018,10 @@ async function toCanvas() {
       logging: false,
     });
   } finally {
+    vidReplacements.forEach(({ vp, replacement }) => {
+      if (replacement) replacement.remove();
+      vp.style.display = '';
+    });
     eds.forEach(e => e.contentEditable = 'true');
   }
 }
@@ -835,15 +1049,26 @@ async function withBtn(id, loadLabel, fn) {
 const saveImage = () => withBtn('btn-save', '渲染中…', async () => {
   const canvas = await toCanvas();
   const id = (document.getElementById('url-input').value.match(/\d{10,}/)||['tweet'])[0];
-  Object.assign(document.createElement('a'), {
-    href: canvas.toDataURL('image/png'), download: `tweet-${id}.png`,
-  }).click();
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tweet-${id}.png`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 100);
 });
 
 const copyImage = () => withBtn('btn-copy-img', '渲染中…', async () => {
+  if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
+    throw new Error('当前浏览器不支持复制图片，请使用「保存图片」');
+  }
   const canvas = await toCanvas();
-  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-  await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+  // Convert canvas → blob URL → fetch → blob (iOS compatible)
+  const dataURL = canvas.toDataURL('image/png');
+  const resp = await fetch(dataURL);
+  const blob = await resp.blob();
+  await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
 });
 
 const copyText = () => withBtn('btn-copy-text', '复制中…', async () => {
@@ -897,6 +1122,7 @@ function openSettings() {
   document.getElementById('set-baseurl').value = c.baseURL || 'https://api.openai.com/v1';
   document.getElementById('set-model').value   = c.model   || 'gpt-4o-mini';
   document.getElementById('set-lang').value    = c.lang    || '简体中文';
+  document.getElementById('set-show-media').checked = c.showMedia !== false;
   document.getElementById('modal-backdrop').classList.add('open');
   document.getElementById('set-apikey').focus();
 }
@@ -909,6 +1135,7 @@ function commitSettings() {
     baseURL: document.getElementById('set-baseurl').value.trim(),
     model:   document.getElementById('set-model').value,
     lang:    document.getElementById('set-lang').value,
+    showMedia: document.getElementById('set-show-media').checked,
   };
   saveSettings(cfg);
   closeSettings();

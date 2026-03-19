@@ -162,6 +162,12 @@ type fxResponse struct {
 				Width  int    `json:"width"`
 				Height int    `json:"height"`
 			} `json:"photos"`
+			Videos []struct {
+				URL    string `json:"url"`
+				Width  int    `json:"width"`
+				Height int    `json:"height"`
+				Thumb  string `json:"thumbnail_url"`
+			} `json:"videos"`
 			All []struct {
 				Type string `json:"type"`
 				URL  string `json:"url"`
@@ -217,6 +223,8 @@ func fetchFxTwitter(id string) ([]byte, error) {
 	type synMedia struct {
 		MediaURLHTTPS string `json:"media_url_https"`
 		Type          string `json:"type"`
+		URL           string `json:"url,omitempty"`
+		Poster        string `json:"poster,omitempty"`
 	}
 	type synPhoto struct {
 		URL    string `json:"url"`
@@ -245,6 +253,7 @@ func fetchFxTwitter(id string) ([]byte, error) {
 		Photos            []synPhoto `json:"photos"`
 		InReplyTo         string     `json:"in_reply_to_screen_name"`
 		QuotedTweet       *synQuoted `json:"quoted_tweet"`
+		Video             *synMedia  `json:"video,omitempty"`
 		Source            string     `json:"_source"`
 	}
 
@@ -273,7 +282,19 @@ func fetchFxTwitter(id string) ([]byte, error) {
 	}
 	for _, m := range t.Media.All {
 		if m.Type == "video" || m.Type == "gif" {
-			syn.MediaDetails = append(syn.MediaDetails, synMedia{Type: m.Type})
+			mType := m.Type
+			if mType == "gif" {
+				mType = "animated_gif" // normalize to syndication convention
+			}
+			sm := synMedia{Type: mType, URL: m.URL}
+			for _, v := range t.Media.Videos {
+				if v.URL == m.URL {
+					sm.Poster = v.Thumb
+					break
+				}
+			}
+			syn.MediaDetails = append(syn.MediaDetails, sm)
+			syn.Video = &sm
 			break
 		}
 	}
