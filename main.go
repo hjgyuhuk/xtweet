@@ -396,8 +396,8 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 // ── main ─────────────────────────────────────────────────────────────────────
 
 func main() {
-	addr := flag.String("addr", "127.0.0.1:8080", "监听地址")
-	open := flag.Bool("open", true, "启动后自动打开浏览器")
+	addr := flag.String("addr", "0.0.0.0:8021", "监听地址")
+	open := flag.Bool("open", false, "启动后自动打开浏览器")
 	flag.Parse()
 
 	mux := http.NewServeMux()

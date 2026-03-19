@@ -446,6 +446,8 @@ body.light-card .translation-text:focus { background: rgba(0,0,0,.025); }
     <input class="url-input" id="url-input" type="text"
       placeholder="https://x.com/jack/status/20"
       autocomplete="off" spellcheck="false">
+    <button class="btn-act" id="paste-btn" title="粘贴链接">粘贴</button>
+    <button class="btn-act" id="clear-btn" title="清空输入">清空</button>
     <button class="btn-primary" id="fetch-btn">获取</button>
   </div>
 </div>
@@ -917,6 +919,21 @@ document.getElementById('fetch-btn').addEventListener('click', doFetch);
 document.getElementById('url-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') doFetch();
 });
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('url-input').value = '';
+  document.getElementById('url-input').focus();
+});
+
+document.getElementById('paste-btn').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('url-input').value = text;
+    document.getElementById('url-input').focus();
+  } catch (e) {
+    setStatus('无法读取剪贴板', 'error');
+  }
+});
 document.getElementById('btn-save').addEventListener('click', saveImage);
 document.getElementById('btn-copy-img').addEventListener('click', copyImage);
 document.getElementById('btn-copy-text').addEventListener('click', copyText);
@@ -956,8 +973,9 @@ document.getElementById('toggle-key').addEventListener('click', () => {
 document.getElementById('url-input').focus();
 
 const p = new URLSearchParams(location.search);
-if (p.get('url')) {
-  document.getElementById('url-input').value = p.get('url');
+const autoUrl = p.get('xurl') || p.get('url');
+if (autoUrl) {
+  document.getElementById('url-input').value = autoUrl;
   doFetch();
 }
 </script>
