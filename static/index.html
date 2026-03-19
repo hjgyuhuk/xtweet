@@ -446,18 +446,18 @@ body.safari #btn-copy-img { display: none; }
           </svg>
         </button>
       </div>
-      <div class="field-hint">仅保存在本地浏览器 (localStorage)，不会上传到服务器。</div>
+      <div class="field-hint" id="hint-apikey">仅保存在本地浏览器 (localStorage)，不会上传到服务器。</div>
     </div>
 
     <div class="field">
       <label class="field-label" for="set-baseurl">API Base URL</label>
       <input class="field-input" id="set-baseurl" type="text"
         placeholder="https://api.openai.com/v1" spellcheck="false">
-      <div class="field-hint">兼容 OpenAI 格式的第三方接口可在此修改。</div>
+      <div class="field-hint" id="hint-baseurl">兼容 OpenAI 格式的第三方接口可在此修改。</div>
     </div>
 
     <div class="field">
-      <label class="field-label" for="set-model">模型</label>
+      <label class="field-label" for="set-model" id="label-model">模型</label>
       <input class="field-input" id="set-model" type="text"
         list="model-list" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
       <datalist id="model-list">
@@ -469,11 +469,11 @@ body.safari #btn-copy-img { display: none; }
         <option value="o1-preview">
         <option value="o3-mini">
       </datalist>
-      <div class="field-hint">可直接输入任意模型名，也可从下拉列表中选择常用模型。</div>
+      <div class="field-hint" id="hint-model">可直接输入任意模型名，也可从下拉列表中选择常用模型。</div>
     </div>
 
     <div class="field">
-      <label class="field-label" for="set-lang">翻译目标语言</label>
+      <label class="field-label" for="set-lang" id="label-lang">翻译目标语言</label>
       <select class="field-select" id="set-lang">
         <option value="简体中文">简体中文</option>
         <option value="繁體中文">繁體中文</option>
@@ -487,14 +487,14 @@ body.safari #btn-copy-img { display: none; }
     </div>
 
     <div class="field field-show-media">
-      <label class="field-label">显示</label>
+      <label class="field-label" id="label-display">显示</label>
       <div class="toggle-row">
         <label class="toggle-item">
           <input type="checkbox" id="set-show-media" checked>
-          <span>显示图片 / 视频</span>
+          <span id="label-show-media">显示图片 / 视频</span>
         </label>
       </div>
-      <div class="field-hint">关闭后卡片中不再显示图片和视频，仅显示文字内容。</div>
+      <div class="field-hint" id="hint-media">关闭后卡片中不再显示图片和视频，仅显示文字内容。</div>
     </div>
 
     <div class="modal-footer">
@@ -566,6 +566,109 @@ body.safari #btn-copy-img { display: none; }
 
 <script>
 'use strict';
+
+// ── i18n ─────────────────────────────────────────────────────────────────
+const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ja') ? 'ja'
+  : (navigator.language || 'zh').toLowerCase().startsWith('en') ? 'en' : 'zh';
+
+const i18n = {
+  zh: {
+    settings: '设置', lightCard: '☀ 浅色卡片', darkCard: '☾ 暗色卡片',
+    pasteLink: '粘贴链接', paste: '粘贴', clearInput: '清空输入', clear: '清空',
+    fetch: '获取', fetching: '获取中', requesting: '正在请求…',
+    subtitle: '粘贴 x.com / twitter.com 链接',
+    translate: '翻译', copyText: '复制文本', copyImage: '复制图片', saveImage: '保存图片',
+    showHide: '显示/隐藏',
+    apiKeyHint: '仅保存在本地浏览器 (localStorage)，不会上传到服务器。',
+    baseURLHint: '兼容 OpenAI 格式的第三方接口可在此修改。',
+    model: '模型',
+    modelHint: '可直接输入任意模型名，也可从下拉列表中选择常用模型。',
+    targetLang: '翻译目标语言',
+    display: '显示', showMedia: '显示图片 / 视频',
+    showMediaHint: '关闭后卡片中不再显示图片和视频，仅显示文字内容。',
+    cancel: '取消', save: '保存',
+    replyTo: '回复', replies: '回复', likes: '喜欢',
+    translation: '译文', translating: '翻译中…',
+    translatingErr: '请先在设置中填写 OpenAI API Key',
+    overwriteConfirm: '是否覆盖原推文？\n\n确定 = 覆盖原文\n取消 = 显示在下方',
+    translatingFail: '翻译失败',
+    apiError: 'API 错误',
+    apiEmpty: 'API 返回空内容',
+    done: '✓ 完成', rendering: '渲染中…',
+    copyNotSupported: '当前浏览器不支持复制图片，请使用「保存图片」',
+    copying: '复制中…', noTweet: '尚未加载推文',
+    clipboardErr: '无法读取剪贴板',
+    videoLabel: '视频', imgLabel: '张图片',
+    translatedPrefix: '[译]', mediaSection: '── 媒体 ──',
+    translateSystemPrompt: 'You are a professional translator. Detect the source language of the tweet, then translate it into ${lang}. Rules: 1) Output ONLY the translated text in ${lang}, nothing else. 2) Keep #hashtags and @usernames unchanged. 3) Preserve the original tone, emotion, and style. 4) Do not add explanations, notes, or the original text. 5) The output MUST be in ${lang} only.',
+  },
+  en: {
+    settings: 'Settings', lightCard: '☀ Light Card', darkCard: '☾ Dark Card',
+    pasteLink: 'Paste Link', paste: 'Paste', clearInput: 'Clear', clear: 'Clear',
+    fetch: 'Fetch', fetching: 'Fetching...', requesting: 'Requesting...',
+    subtitle: 'Paste x.com / twitter.com link',
+    translate: 'Translate', copyText: 'Copy Text', copyImage: 'Copy Image', saveImage: 'Save Image',
+    showHide: 'Show/Hide',
+    apiKeyHint: 'Only saved in your browser (localStorage). Never sent to the server.',
+    baseURLHint: 'Change this for third-party OpenAI-compatible APIs.',
+    model: 'Model',
+    modelHint: 'Enter any model name or select a common one from the dropdown.',
+    targetLang: 'Translation Target Language',
+    display: 'Display', showMedia: 'Show Images / Videos',
+    showMediaHint: 'When off, images and videos will not be shown in the card.',
+    cancel: 'Cancel', save: 'Save',
+    replyTo: 'Reply to', replies: 'Replies', likes: 'Likes',
+    translation: 'Translation', translating: 'Translating...',
+    translatingErr: 'Please enter your OpenAI API Key in Settings first.',
+    overwriteConfirm: 'Overwrite the original tweet?\n\nOK = Overwrite original\nCancel = Show below',
+    translatingFail: 'Translation failed',
+    apiError: 'API Error',
+    apiEmpty: 'API returned empty content',
+    done: '✓ Done', rendering: 'Rendering...',
+    copyNotSupported: 'Your browser does not support copying images. Use "Save Image" instead.',
+    copying: 'Copying...', noTweet: 'No tweet loaded',
+    clipboardErr: 'Unable to read clipboard',
+    videoLabel: 'Video', imgLabel: 'images',
+    translatedPrefix: '[Translated]', mediaSection: '── Media ──',
+    translateSystemPrompt: 'You are a professional translator. Detect the source language of the tweet, then translate it into ${lang}. Rules: 1) Output ONLY the translated text in ${lang}, nothing else. 2) Keep #hashtags and @usernames unchanged. 3) Preserve the original tone, emotion, and style. 4) Do not add explanations, notes, or the original text. 5) The output MUST be in ${lang} only.',
+  },
+  ja: {
+    settings: '設定', lightCard: '☀ ライトカード', darkCard: '☾ ダークカード',
+    pasteLink: 'リンクを貼り付け', paste: '貼り付け', clearInput: '入力をクリア', clear: 'クリア',
+    fetch: '取得', fetching: '取得中...', requesting: 'リクエスト中…',
+    subtitle: 'x.com / twitter.com のリンクを貼り付け',
+    translate: '翻訳', copyText: 'テキストをコピー', copyImage: '画像をコピー', saveImage: '画像を保存',
+    showHide: '表示/非表示',
+    apiKeyHint: 'ローカルブラウザ（localStorage）にのみ保存され、サーバーには送信されません。',
+    baseURLHint: 'OpenAI互換のサードパーティAPIはこちらで変更できます。',
+    model: 'モデル',
+    modelHint: 'モデル名を直接入力するか、ドロップダウンから選択してください。',
+    targetLang: '翻訳対象言語',
+    display: '表示', showMedia: '画像 / 動画を表示',
+    showMediaHint: 'オフにすると、カードに画像や動画が表示されなくなります。',
+    cancel: 'キャンセル', save: '保存',
+    replyTo: '返信先', replies: '返信', likes: 'いいね',
+    translation: '翻訳', translating: '翻訳中…',
+    translatingErr: 'まず設定でOpenAI APIキーを入力してください。',
+    overwriteConfirm: '元のツイートを上書きしますか？\n\nOK = 上書き\nキャンセル = 下に表示',
+    translatingFail: '翻訳に失敗しました',
+    apiError: 'APIエラー',
+    apiEmpty: 'APIが空のコンテンツを返しました',
+    done: '✓ 完了', rendering: 'レンダリング中…',
+    copyNotSupported: 'お使いのブラウザは画像のコピーに対応していません。「画像を保存」をご利用ください。',
+    copying: 'コピー中...', noTweet: 'ツイートが読み込まれていません',
+    clipboardErr: 'クリップボードを読み取れません',
+    videoLabel: '動画', imgLabel: '枚の画像',
+    translatedPrefix: '[翻訳]', mediaSection: '── メディア ──',
+    translateSystemPrompt: 'You are a professional translator. Detect the source language of the tweet, then translate it into ${lang}. Rules: 1) Output ONLY the translated text in ${lang}, nothing else. 2) Keep #hashtags and @usernames unchanged. 3) Preserve the original tone, emotion, and style. 4) Do not add explanations, notes, or the original text. 5) The output MUST be in ${lang} only.',
+  },
+};
+
+function t(key, vars) {
+  let s = (i18n[LANG] || i18n.zh)[key] || i18n.zh[key] || key;
+  if (vars) Object.entries(vars).forEach(([k, v]) => { s = s.replace('${' + k + '}', v); });
+  return s;
+}
 
 // ── Browser detection ────────────────────────────────────────────────────
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -661,13 +764,13 @@ function plainBody(tweet) {
 }
 
 function mediaSummary(tweet) {
-  if (tweet.video) return {icon:'▶', label:'视频'};
+  if (tweet.video) return {icon:'▶', label: t('videoLabel')};
   for (const m of (tweet.mediaDetails||[])) {
     if (m.type==='animated_gif') return {icon:'⟳', label:'GIF'};
   }
   const n = (tweet.mediaDetails||tweet.photos||[]).length;
-  if (n===1) return {icon:'◻', label:'1 张图片'};
-  if (n>1)   return {icon:'⊞', label:`${n} 张图片`};
+  if (n===1) return {icon:'◻', label: '1 ' + t('imgLabel')};
+  if (n>1)   return {icon:'⊞', label:`${n} ${t('imgLabel')}`};
   return null;
 }
 
@@ -720,8 +823,8 @@ function buildPlainText() {
   // Translation
   const transEl = document.querySelector('#tweet-card .translation-text');
   if (transEl) {
-    const t = transEl.innerText.trim();
-    if (t) lines.push('', '────────────────────', `[译] ${t}`);
+    const transText = transEl.innerText.trim();
+    if (transText) lines.push('', '────────────────────', `${t('translatedPrefix')} ${transText}`);
   }
 
   // Media
@@ -743,7 +846,7 @@ function buildPlainText() {
     }
   });
   if (mediaLines.length) {
-    lines.push('', '── 媒体 ──', ...mediaLines);
+    lines.push('', t('mediaSection'), ...mediaLines);
   }
 
   lines.push('', currentURL);
@@ -764,7 +867,7 @@ function renderCard(tweet) {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/>
       </svg>
-      回复&nbsp;<span style="color:var(--accent)">@${esc(tweet.in_reply_to_screen_name)}</span>
+      ${t('replyTo')}&nbsp;<span style="color:var(--accent)">@${esc(tweet.in_reply_to_screen_name)}</span>
     </div>`;
   }
 
@@ -844,14 +947,14 @@ function renderCard(tweet) {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
-      <span class="stat-num">${fmtCount(tweet.conversation_count)}</span>&nbsp;回复
+      <span class="stat-num">${fmtCount(tweet.conversation_count)}</span>&nbsp;${t('replies')}
     </span>
     <div class="stat-dot"></div>
     <span class="stat">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
       </svg>
-      <span class="stat-num">${fmtCount(tweet.favorite_count)}</span>&nbsp;喜欢
+      <span class="stat-num">${fmtCount(tweet.favorite_count)}</span>&nbsp;${t('likes')}
     </span>
     ${tweet.created_at ? `<span class="tweet-date">${fmtDate(tweet.created_at)}</span>` : ''}
   </div>`;
@@ -877,9 +980,9 @@ function showTranslationLoading() {
         <path d="M2 5h12"/><path d="M7 2h1"/>
         <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
       </svg>
-      译文
+      ${t('translation')}
     </div>
-    <div class="translation-loading"><span class="spinner"></span>翻译中…</div>`;
+    <div class="translation-loading"><span class="spinner"></span>${t('translating')}</div>`;
   card.insertBefore(block, divider);
 }
 
@@ -894,7 +997,7 @@ function showTranslationResult(text) {
         <path d="M2 5h12"/><path d="M7 2h1"/>
         <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
       </svg>
-      译文
+      ${t('translation')}
     </div>
     <div class="translation-text" contenteditable="true" spellcheck="false">${esc(text)}</div>`;
 }
@@ -911,7 +1014,7 @@ async function doTranslate() {
   const apiKey = cfg.apiKey || '';
   if (!apiKey) {
     openSettings();
-    setStatus('请先在设置中填写 OpenAI API Key', 'error');
+    setStatus(t('translatingErr'), 'error');
     return;
   }
 
@@ -924,9 +1027,9 @@ async function doTranslate() {
     editEl.dataset.original = editEl.innerHTML;
   }
 
-  const overwrite = confirm('是否覆盖原推文？\n\n确定 = 覆盖原文\n取消 = 显示在下方');
+  const overwrite = confirm(t('overwriteConfirm'));
 
-  const lang    = cfg.lang    || '简体中文';
+  const lang    = cfg.lang    || (LANG === 'ja' ? '日本語' : LANG === 'en' ? 'English' : '简体中文');
   const model   = cfg.model   || 'gpt-4o-mini';
   const baseURL = (cfg.baseURL || 'https://api.openai.com/v1').replace(/\/$/, '');
 
@@ -948,7 +1051,7 @@ async function doTranslate() {
         messages: [
           {
             role: 'system',
-            content: `你是一名专业翻译。将用户提供的推文翻译成${lang}。要求：保留原文语气和风格，保留 #话题标签 和 @用户名 不翻译，只输出译文本身，不加任何额外说明。`,
+            content: t('translateSystemPrompt', { lang }),
           },
           { role: 'user', content: body },
         ],
@@ -957,12 +1060,12 @@ async function doTranslate() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `API 错误 ${res.status}`);
+      throw new Error(err?.error?.message || `${t('apiError')} ${res.status}`);
     }
 
     const data = await res.json();
     const translated = data.choices?.[0]?.message?.content?.trim() || '';
-    if (!translated) throw new Error('API 返回空内容');
+    if (!translated) throw new Error(t('apiEmpty'));
 
     if (overwrite) {
       // Replace tweet text with translation
@@ -974,7 +1077,7 @@ async function doTranslate() {
     }
   } catch (e) {
     removeTranslationBlock();
-    setStatus('翻译失败: ' + e.message, 'error');
+    setStatus(t('translatingFail') + ': ' + e.message, 'error');
   } finally {
     btn.disabled = false;
   }
@@ -1035,7 +1138,7 @@ async function withBtn(id, loadLabel, fn) {
   try {
     await fn();
     btn.classList.add('ok');
-    btn.innerHTML = '✓ 完成';
+    btn.innerHTML = t('done');
     setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('ok'); }, 1800);
   } catch (e) {
     setStatus(e.message, 'error');
@@ -1046,7 +1149,7 @@ async function withBtn(id, loadLabel, fn) {
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────
-const saveImage = () => withBtn('btn-save', '渲染中…', async () => {
+const saveImage = () => withBtn('btn-save', t('rendering'), async () => {
   const canvas = await toCanvas();
   const id = (document.getElementById('url-input').value.match(/\d{10,}/)||['tweet'])[0];
   const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
@@ -1059,9 +1162,9 @@ const saveImage = () => withBtn('btn-save', '渲染中…', async () => {
   setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 100);
 });
 
-const copyImage = () => withBtn('btn-copy-img', '渲染中…', async () => {
+const copyImage = () => withBtn('btn-copy-img', t('rendering'), async () => {
   if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
-    throw new Error('当前浏览器不支持复制图片，请使用「保存图片」');
+    throw new Error(t('copyNotSupported'));
   }
   const canvas = await toCanvas();
   // Convert canvas → blob URL → fetch → blob (iOS compatible)
@@ -1071,8 +1174,8 @@ const copyImage = () => withBtn('btn-copy-img', '渲染中…', async () => {
   await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
 });
 
-const copyText = () => withBtn('btn-copy-text', '复制中…', async () => {
-  if (!currentTweet) throw new Error('尚未加载推文');
+const copyText = () => withBtn('btn-copy-text', t('copying'), async () => {
+  if (!currentTweet) throw new Error(t('noTweet'));
   await navigator.clipboard.writeText(buildPlainText());
 });
 
@@ -1084,9 +1187,9 @@ async function doFetch() {
   if (!raw) return;
 
   btnEl.disabled = true;
-  btnEl.textContent = '获取中';
+  btnEl.textContent = t('fetching');
   const st = document.getElementById('status');
-  st.innerHTML = '<span class="spinner"></span>正在请求…';
+  st.innerHTML = `<span class="spinner"></span>${t('requesting')}`;
   st.className = 'status loading';
   document.getElementById('card-outer').classList.remove('visible');
   document.getElementById('action-bar').classList.remove('visible');
@@ -1111,7 +1214,7 @@ async function doFetch() {
     setStatus(e.message, 'error');
   } finally {
     btnEl.disabled   = false;
-    btnEl.textContent = '获取';
+    btnEl.textContent = t('fetch');
   }
 }
 
@@ -1121,7 +1224,7 @@ function openSettings() {
   document.getElementById('set-apikey').value  = c.apiKey  || '';
   document.getElementById('set-baseurl').value = c.baseURL || 'https://api.openai.com/v1';
   document.getElementById('set-model').value   = c.model   || 'gpt-4o-mini';
-  document.getElementById('set-lang').value    = c.lang    || '简体中文';
+  document.getElementById('set-lang').value    = c.lang    || (LANG === 'ja' ? '日本語' : LANG === 'en' ? 'English' : '简体中文');
   document.getElementById('set-show-media').checked = c.showMedia !== false;
   document.getElementById('modal-backdrop').classList.add('open');
   document.getElementById('set-apikey').focus();
@@ -1158,7 +1261,7 @@ document.getElementById('paste-btn').addEventListener('click', async () => {
     document.getElementById('url-input').value = text;
     document.getElementById('url-input').focus();
   } catch (e) {
-    setStatus('无法读取剪贴板', 'error');
+    setStatus(t('clipboardErr'), 'error');
   }
 });
 document.getElementById('btn-save').addEventListener('click', saveImage);
@@ -1168,7 +1271,7 @@ document.getElementById('btn-translate').addEventListener('click', doTranslate);
 
 document.getElementById('theme-btn').addEventListener('click', () => {
   const on = document.body.classList.toggle('light-card');
-  document.getElementById('theme-btn').textContent = on ? '☾ 暗色卡片' : '☀ 浅色卡片';
+  document.getElementById('theme-btn').textContent = on ? t('darkCard') : t('lightCard');
 });
 
 // Settings modal
@@ -1205,6 +1308,40 @@ if (autoUrl) {
   document.getElementById('url-input').value = autoUrl;
   doFetch();
 }
+
+// ── Apply i18n ───────────────────────────────────────────────────────────
+(function applyI18n() {
+  // Top bar
+  document.getElementById('settings-btn').lastChild.textContent = t('settings');
+  document.getElementById('theme-btn').textContent = document.body.classList.contains('light-card') ? t('darkCard') : t('lightCard');
+  // Settings modal
+  document.getElementById('modal-title-text').textContent = t('settings');
+  document.getElementById('toggle-key').title = t('showHide');
+  document.getElementById('hint-apikey').textContent = t('apiKeyHint');
+  document.getElementById('hint-baseurl').textContent = t('baseURLHint');
+  document.getElementById('label-model').textContent = t('model');
+  document.getElementById('hint-model').textContent = t('modelHint');
+  document.getElementById('label-lang').textContent = t('targetLang');
+  document.getElementById('label-display').textContent = t('display');
+  document.getElementById('label-show-media').textContent = t('showMedia');
+  document.getElementById('hint-media').textContent = t('showMediaHint');
+  document.getElementById('modal-cancel').textContent = t('cancel');
+  document.getElementById('modal-save').textContent = t('save');
+  // Main
+  document.querySelector('.logo-sub').textContent = t('subtitle');
+  document.getElementById('paste-btn').title = t('pasteLink');
+  document.getElementById('paste-btn').textContent = t('paste');
+  document.getElementById('clear-btn').title = t('clearInput');
+  document.getElementById('clear-btn').textContent = t('clear');
+  document.getElementById('fetch-btn').textContent = t('fetch');
+  // Action bar
+  document.getElementById('btn-translate').lastChild.textContent = t('translate');
+  document.getElementById('btn-copy-text').lastChild.textContent = t('copyText');
+  document.getElementById('btn-copy-img').lastChild.textContent = t('copyImage');
+  document.getElementById('btn-save').lastChild.textContent = t('saveImage');
+  // Update html lang
+  document.documentElement.lang = LANG === 'ja' ? 'ja' : LANG === 'en' ? 'en' : 'zh';
+})();
 </script>
 </body>
 </html>
